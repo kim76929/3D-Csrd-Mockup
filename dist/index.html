@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D 卡片互動 Mockup</title>
+
+  <!-- 🌟 強制破解 CSS 快取 (建議版本號改為 v=3003) -->
+  <link rel="stylesheet" href="style.css?v=3003">
+</head>
+<body>
+
+  <!-- 控制面板模組 -->
+  <aside class="controls" aria-label="展示控制面板">
+    
+    <!-- iOS / Android 陀螺儀 3D 感應開關按鈕 -->
+    <div class="gyro-group">
+      <button id="gyroBtn" class="upload-btn gyro-btn">3D感應</button>
+    </div>
+
+    <!-- 背景顏色選擇 -->
+    <div class="color-group">
+      <span class="label-text">背景</span>
+      <div class="color-dots">
+        <button class="color-dot active" style="background-color: #111111;" data-color="#111111" title="極夜黑"></button>
+        <button class="color-dot" style="background-color: #2c2c2e;" data-color="#2c2c2e" title="太空灰"></button>
+        <button class="color-dot" style="background-color: #ededee;" data-color="#ededee" title="質感白"></button>
+        <button class="color-dot color-dot--blur" id="blurBgBtn" title="模糊背景" aria-label="模糊背景"></button>
+      </div>
+    </div>
+
+    <!-- 卡片縮放比例拉條區塊 -->
+    <div class="scale-group">
+      <span class="label-text">尺寸 <span id="scaleVal">100%</span></span>
+      <input type="range" id="cardScaleRange" min="50" max="150" value="100" step="5">
+    </div>
+
+    <!-- 上傳圖片膠囊按鈕區塊 -->
+    <div class="upload-group">
+      <label for="imageUpload" class="upload-btn">
+        <span>圖片</span>
+      </label>
+      <input type="file" id="imageUpload" accept="image/*" style="display: none;">
+    </div>
+  </aside>
+
+  <!-- 3D 物理互動卡片主體 -->
+  <main class="card-wrapper">
+    <article class="card glossy">
+      <div class="card__rotator">
+        <div class="card__shadow"></div>
+        <div class="card__front">
+          <img src="https://i.postimg.cc/6qHpKgMS/001.avif" alt="3D 展示卡片圖樣" loading="eager">
+          <div class="card__shine"></div>
+          <div class="card__glare"></div>
+        </div>
+      </div>
+    </article>
+  </main>
+
+  <!-- 🌟 強制破解 JS 快取 (建議版本號改為 v=3003) -->
+  <script src="script.js?v=3003"></script>
+
+</body>
+</html>

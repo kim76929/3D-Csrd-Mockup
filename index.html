@@ -5,15 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>3D 卡片互動 Mockup</title>
 
-  <!-- 外部樣式表引入 -->
-  <link rel="stylesheet" href="style.css">
+  <!-- 🌟 強制破解 CSS 快取 -->
+  <link rel="stylesheet" href="style.css?v=2001">
 </head>
 <body>
 
-<!-- ============================================================
-       1. 控制面板模組 (Control Panel UI)
-       ============================================================ -->
+  <!-- 控制面板模組 -->
   <aside class="controls" aria-label="展示控制面板">
+    
+    <!-- 🌟 iOS 16/17/18/iPhone 專用：陀螺儀 3D 感應開關按鈕 -->
+    <div class="gyro-group">
+      <button id="gyroBtn" class="upload-btn gyro-btn">3D感應</button>
+    </div>
+
     <!-- 背景顏色選擇 -->
     <div class="color-group">
       <span class="label-text">背景</span>
@@ -25,7 +29,7 @@
       </div>
     </div>
 
-    <!-- 🌟 新增：卡片縮放比例拉條區塊 -->
+    <!-- 卡片縮放比例拉條區塊 -->
     <div class="scale-group">
       <span class="label-text">尺寸 <span id="scaleVal">100%</span></span>
       <input type="range" id="cardScaleRange" min="50" max="150" value="100" step="5">
@@ -40,37 +44,22 @@
     </div>
   </aside>
 
-  <!-- ============================================================
-       2. 3D 物理互動卡片主體 (Interactive 3D Card Container)
-       ============================================================ -->
+  <!-- 3D 物理互動卡片主體 -->
   <main class="card-wrapper">
     <article class="card glossy">
-      <!-- 物理旋轉與微分縮放核心圖層 -->
       <div class="card__rotator">
-        
-        <!-- [底層] 動態物理懸擺陰影圖層 -->
         <div class="card__shadow"></div>
-
-        <!-- [表層] 正面主內容容器 (裁切圓角) -->
         <div class="card__front">
-          <!-- 卡片視覺底圖 -->
           <img src="https://i.postimg.cc/6qHpKgMS/001.avif" alt="3D 展示卡片圖樣" loading="eager">
-
-          <!-- 動態折射光影層 (Shine) -->
           <div class="card__shine"></div>
-
-          <!-- 游標跟隨聚光層 (Glare) -->
           <div class="card__glare"></div>
         </div>
-
       </div>
     </article>
   </main>
 
-  <!-- ============================================================
-       3. 核心物理引擎與互動腳本 (JavaScript Engine)
-       ============================================================ -->
-  <script src="script.js"></script>
+  <!-- 🌟 強制破解 JS 快取 -->
+  <script src="script.js?v=2001"></script>
 
 </body>
 </html>

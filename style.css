@@ -1,0 +1,404 @@
+/* ============================================================
+   1. 全域變數宣告 (CSS Custom Variables)
+   ============================================================ */
+:root {
+  --pointer-x: 50%;
+  --pointer-y: 50%;
+  --card-scale: 1;
+  --card-opacity: 0;
+  --rotate-x: 0deg;
+  --rotate-y: 0deg;
+  --background-x: var(--pointer-x);
+  --background-y: var(--pointer-y);
+  --pointer-from-center: 0;
+
+  /* 🌟 [自訂參數 1] 卡片陰影強度 (數字越大陰影越深) */
+  --card-shadow-intensity: 30;
+
+  /* 🌟 [自訂參數 2] 卡片實體 3D 厚度 */
+  --card-thickness: 8px;
+
+  /* 🌟 [自訂參數 3] 側面切面高光顏色 */
+  --card-edge-color: rgba(255, 255, 255, 0.45);
+
+  /* 🌟🌟🌟 [新功能！桌面貼地陰影微調參數] 🌟🌟🌟 */
+  /* 1. 陰影模糊度 (預設 10px，數字越小越扎實實體，越高越飄渺) */
+  --card-shadow-blur: 3px;
+
+  /* 2. 陰影垂直下沉距離 (預設 10px，數字越小越貼近桌面) */
+  --card-shadow-offset-y: 2px;
+
+  /* 3. 陰影離桌面懸空深度 (預設 -12px，原本是 -45px 飄很高，現在緊貼桌面) */
+  --card-shadow-depth: -20px;
+}
+/* ============================================================
+   2. 全域與排版設定 (Global & Layout Settings)
+   ============================================================ */
+body {
+  background-color: #111111;
+  background-size: cover !important;
+  background-position: center center !important;
+  background-repeat: no-repeat !important;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0;
+  transition: background 0.4s ease, background-color 0.3s ease;
+  overflow: hidden;
+  
+  backdrop-filter: blur(80px) brightness(1.1);
+  -webkit-backdrop-filter: blur(80px) brightness(1.1);
+}
+
+/* === 3D 視角外層容器 === */
+.card-wrapper {
+  perspective: 1000px;
+  perspective-origin: center center;
+}
+
+/* === 3D 卡片主容器 (純淨邊界、移除 CSS Transition 確保 JS 彈簧平滑) === */
+.card {
+  width: 300px;
+  height: auto;
+  max-width: 90vw;
+  border-radius: 16px;
+  transform-style: preserve-3d;
+  position: relative;
+  cursor: pointer;
+  filter: none !important;
+  transition: none !important;
+}
+
+.card:hover {
+  filter: none !important;
+}
+
+/* ============================================================
+   3. 核心 3D 物理動態層 (全方向擬真實體 3D 厚度切面)
+   ============================================================ */
+.card__rotator {
+  width: 100%;
+  height: 100%;
+  border-radius: 16px;
+  transform-style: preserve-3d;
+  transform-origin: center center;
+  transform: rotateX(var(--rotate-x, 0deg)) rotateY(var(--rotate-y, 0deg)) scale(var(--card-scale, 1));
+}
+
+/* 🌟 卡片正面：啟用 preserve-3d 並增加實體邊界光影 */
+.card__front {
+  width: 100%;
+  height: auto;
+  position: relative;
+  border-radius: inherit;
+  overflow: visible !important; /* 允許側邊厚度溢出顯示 */
+  transform-style: preserve-3d; /* 👈 關鍵：必須保持 3D 空間才能推開厚度 */
+  
+  /* 正面向前推移一半厚度距離 */
+  transform: translateZ(calc(var(--card-thickness) / 2));
+  box-shadow: 0 0 0 1px var(--card-edge-color);
+}
+
+/* 🌟 [核心修復] 實體 3D 厚度牆：利用 drop-shadow 產生左右上下全方向的階梯狀厚度 */
+.card__front::before {
+  content: "";
+  display: block !important;
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: #18181b;
+  pointer-events: none;
+  z-index: -1;
+  
+  /* 往後拉開實體厚度距離 */
+  transform: translateZ(calc(var(--card-thickness) * -1));
+  
+  /* 🌟 使用 drop-shadow 在 3D 傾斜時產生立體切面邊框牆 */
+  filter: 
+    drop-shadow(-1px 0px 0px #27272a)
+    drop-shadow(1px 0px 0px #27272a)
+    drop-shadow(0px 1px 0px #09090b)
+    drop-shadow(0px -1px 0px #3f3f46);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.15);
+}
+
+/* 🌟 讓圖片根據原始長寬比例自然撐開，並裁切好圓角 */
+.card__front img {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: inherit;
+  pointer-events: none;
+  object-fit: contain;
+}
+
+/* ============================================================
+   4. 光影與動態增強陰影圖層 (Light, Glare & Heavy Dynamic Shadow)
+   ============================================================ */
+.card__shine {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background-position: var(--background-x, 50%) var(--background-y, 50%);
+  background: radial-gradient(
+    circle at var(--pointer-x, 50%) var(--pointer-y, 50%),
+    rgba(255, 255, 255, 0.4) 0%,
+    rgba(255, 255, 255, 0.1) 30%,
+    rgba(255, 255, 255, 0) 70%
+  );
+  opacity: var(--card-opacity, 0);
+  mix-blend-mode: overlay;
+  z-index: 2;
+}
+
+.card__glare {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 3;
+  
+  background: radial-gradient(
+    circle at var(--pointer-x, 50%) var(--pointer-y, 50%),
+    rgba(255, 255, 255, 0.1) 0%,
+    rgba(255, 255, 255, 0.01) 30%,
+    transparent 80%
+  );
+  
+  mix-blend-mode: screen;
+  opacity: var(--card-opacity, 0);
+  transition: opacity 0.25s ease;
+}
+
+/* 🌟 [貼地實體陰影] 動態桌面陰影圖層 */
+.card__shadow {
+  position: absolute;
+  inset: 1%;
+  background: rgba(0, 0, 0, 0.95);
+  border-radius: inherit;
+  z-index: -1;
+  
+  /* 🌟 透過 --card-shadow-offset-y 與 --card-shadow-depth 控制桌面貼合度 */
+  transform: translate3d(
+    calc(var(--rotate-y) * -0.5px),
+    calc(var(--rotate-x) * 0.5px + var(--card-shadow-offset-y)),
+    var(--card-shadow-depth)
+  ) scale(calc(var(--card-scale) * 0.96));
+  
+  /* 🌟 透過 --card-shadow-blur 控制陰影扎實度，不再模糊潰散 */
+  filter: blur(var(--card-shadow-blur)) opacity(calc((var(--card-opacity) * 0.4 + 0.6) * var(--card-shadow-intensity)));
+  pointer-events: none;
+}
+
+/* ============================================================
+   5. 展示控制面板 UI (Control Panel UI - 基礎樣式)
+   ============================================================ */
+.controls {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  background: rgba(30, 30, 32, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 8px 16px;
+  border-radius: 30px;
+  color: #ffffff;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  z-index: 1000;
+  box-sizing: border-box;
+}
+
+.gyro-group,
+.color-group,
+.scale-group,
+.upload-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.label-text {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.color-dots {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.color-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50% !important;
+  border: 2px solid transparent;
+  padding: 0;
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  flex-shrink: 0;
+}
+
+.color-dot:hover {
+  transform: scale(1.15);
+}
+
+.color-dot.active {
+  border-color: #ffffff;
+  transform: scale(1.1);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
+}
+
+.controls .color-dots button.color-dot--blur {
+  background-color: #8b5cf6 !important;
+  background: #8b5cf6 !important;
+  border: 2px solid transparent !important;
+  cursor: pointer;
+}
+
+.upload-group {
+  border-left: 1px solid rgba(255, 255, 255, 0.15);
+  padding-left: 16px;
+}
+
+.upload-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  user-select: none;
+  pointer-events: auto !important;
+}
+
+.gyro-btn {
+  background: rgba(139, 92, 246, 0.35) !important;
+  border: 1px solid rgba(139, 92, 246, 0.6) !important;
+}
+
+.scale-group {
+  border-left: 1px solid rgba(255, 255, 255, 0.15);
+  padding-left: 16px;
+}
+
+.scale-group #scaleVal {
+  display: inline-block;
+  min-width: 36px;
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.scale-group input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 80px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+
+.scale-group input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #ffffff;
+}
+
+/* ============================================================
+   📱 6. 手機端極致緊湊版 (無滑動、一眼看完所有功能)
+   ============================================================ */
+@media (max-width: 768px) {
+  .controls {
+    top: auto !important;
+    bottom: 24px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    
+    width: auto !important;
+    max-width: calc(100vw - 12px) !important;
+    justify-content: center !important;
+    white-space: nowrap !important;
+    overflow: visible !important;
+    
+    padding: 5px 8px !important;
+    gap: 4px !important;
+    border-radius: 30px;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+  }
+
+  .color-group .label-text,
+  .scale-group .label-text,
+  .scale-group #scaleVal {
+    display: none !important;
+  }
+
+  .scale-group,
+  .upload-group {
+    padding-left: 5px !important;
+    border-left: 1px solid rgba(255, 255, 255, 0.15) !important;
+    gap: 3px !important;
+  }
+
+  .gyro-group,
+  .color-group {
+    gap: 3px !important;
+  }
+
+  .color-dots {
+    gap: 3px !important;
+  }
+  .color-dot {
+    width: 13px !important;
+    height: 13px !important;
+  }
+
+  .scale-group input[type="range"] {
+    width: 35px !important;
+  }
+
+  .gyro-btn,
+  .upload-btn {
+    padding: 3px 6px !important;
+    font-size: 10px !important;
+    border-radius: 10px !important;
+  }
+
+  .card__shine {
+    mix-blend-mode: overlay !important;
+    opacity: var(--card-opacity, 0) !important;
+    background: radial-gradient(
+      circle at var(--pointer-x, 50%) var(--pointer-y, 50%),
+      rgba(255, 255, 255, 0.5) 0%,
+      rgba(255, 255, 255, 0.15) 35%,
+      transparent 75%
+    ) !important;
+  }
+
+  .card__glare {
+    display: block !important;
+    mix-blend-mode: screen !important;
+    opacity: calc(var(--card-opacity, 0) * 0.5) !important;
+  }
+}

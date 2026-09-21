@@ -24,6 +24,8 @@ let targetGlare = { x: 50, y: 50, o: 0 };
 let targetBackground = { x: 50, y: 50 };
 let targetScale = 1;
 
+let isGyroActive = false; // 標記陀螺儀是否正在運作
+
 /* ============================================================
    2. 數值計算工具函數 (Math Utilities)
    ============================================================ */
@@ -71,10 +73,14 @@ function updateSprings() {
     1
   );
 
+  const isMobile = window.innerWidth <= 768 || 'ontouchstart' in window;
+  // 手機端光影封頂在 0.15 柔光，避免刺眼過曝
+  const finalOpacity = isMobile ? Math.min(glare.o, 0.15) : glare.o;
+
   card.style.setProperty("--pointer-x", `${round(glare.x)}%`);
   card.style.setProperty("--pointer-y", `${round(glare.y)}%`);
   card.style.setProperty("--pointer-from-center", pointerFromCenter);
-  card.style.setProperty("--card-opacity", round(glare.o));
+  card.style.setProperty("--card-opacity", round(finalOpacity));
   card.style.setProperty("--rotate-x", `${round(rotate.x)}deg`);
   card.style.setProperty("--rotate-y", `${round(rotate.y)}deg`);
   card.style.setProperty("--background-x", `${round(background.x)}%`);
@@ -87,10 +93,94 @@ function updateSprings() {
 requestAnimationFrame(updateSprings);
 
 /* ============================================================
-   4. 卡片指標互動事件 (Pointer Event Listeners)
+   4. 📱 手機陀螺儀授權與姿態計算 (Device Orientation & Permission)
+   ============================================================ */
+// 🌟 補上原本缺失的姿勢計算邏輯
+function handleOrientation(event) {
+  const gamma = event.gamma || 0; // 左右傾斜 (-90 到 90)
+  const beta = event.beta || 0;   // 前後傾斜 (-180 到 180)
+
+  // 以自然握持手機姿勢（仰角約 45 度）為中心基準
+  const relativeBeta = beta - 45;
+
+  const percentX = clamp(adjust(gamma, -30, 30, 0, 100));
+  const percentY = clamp(adjust(relativeBeta, -30, 30, 0, 100));
+
+  const center = {
+    x: percentX - 50,
+    y: percentY - 50,
+  };
+
+  targetStiffness = springInteractSettings.stiffness;
+  targetDamping = springInteractSettings.damping;
+
+  targetRotate = {
+    x: round(-(center.x / 3.5)),
+    y: round(center.y / 3.5),
+  };
+
+  targetBackground = {
+    x: adjust(percentX, 0, 100, 37, 63),
+    y: adjust(percentY, 0, 100, 33, 67),
+  };
+
+  targetGlare = {
+    x: round(percentX),
+    y: round(percentY),
+    o: 0.25,
+  };
+
+  targetScale = 1;
+}
+
+const gyroBtn = document.getElementById("gyroBtn");
+
+// 請求 iOS (Safari/Chrome) / Android 陀螺儀權限
+function requestGyroPermission() {
+  if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+    DeviceOrientationEvent.requestPermission()
+      .then((permissionState) => {
+        if (permissionState === 'granted') {
+          window.addEventListener('deviceorientation', handleOrientation, true);
+          isGyroActive = true;
+          if (gyroBtn) {
+            gyroBtn.textContent = "3D已開啟";
+            gyroBtn.style.opacity = "0.6";
+          }
+        } else {
+          alert('需要允許陀螺儀權限才能體驗 3D 擺動效果喔！');
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+        alert('請確保網址為 https:// 開頭，且不要在 LINE/FB 內建瀏覽器開啟喔！');
+      });
+  } else if ('DeviceOrientationEvent' in window) {
+    window.addEventListener('deviceorientation', handleOrientation, true);
+    isGyroActive = true;
+    if (gyroBtn) {
+      gyroBtn.textContent = "3D已開啟";
+      gyroBtn.style.opacity = "0.6";
+    }
+  } else {
+    alert('您的裝置不支援陀螺儀感應。');
+  }
+}
+
+// 綁定實體按鈕點擊，100% 滿足 iOS 安全機制
+if (gyroBtn) {
+  gyroBtn.addEventListener("click", requestGyroPermission);
+}
+
+/* ============================================================
+   5. 卡片指標互動事件 (Pointer Event Listeners - 電腦滑鼠優先)
    ============================================================ */
 if (card) {
+  const isMobile = window.innerWidth <= 768 || 'ontouchstart' in window;
+
   card.addEventListener("pointermove", (e) => {
+    if (e.pointerType === "touch" && isGyroActive) return;
+
     if (leaveTimer) {
       clearTimeout(leaveTimer);
       leaveTimer = null;
@@ -128,13 +218,15 @@ if (card) {
     targetGlare = {
       x: round(percent.x),
       y: round(percent.y),
-      o: 1,
+      o: isMobile ? 0.25 : 1,
     };
 
     targetScale = 1.04;
   });
 
   card.addEventListener("pointerleave", () => {
+    if (isGyroActive) return;
+
     if (leaveTimer) clearTimeout(leaveTimer);
 
     leaveTimer = setTimeout(() => {
@@ -150,7 +242,7 @@ if (card) {
 }
 
 /* ============================================================
-   5. 全域 UI DOM 宣告與狀態初始化
+   6. 全域 UI DOM 宣告與狀態初始化
    ============================================================ */
 const colorDots = document.querySelectorAll(".color-dot");
 const blurBgBtn = document.getElementById("blurBgBtn");
@@ -162,7 +254,7 @@ const scaleValDisplay = document.getElementById("scaleVal");
 let currentUploadedImage = null;
 
 /* ============================================================
-   6. 控制面板與背景切換邏輯
+   7. 控制面板與背景切換邏輯
    ============================================================ */
 colorDots.forEach((dot) => {
   dot.addEventListener("click", (e) => {
@@ -199,7 +291,7 @@ colorDots.forEach((dot) => {
 });
 
 /* ============================================================
-   7. 自訂圖片上傳邏輯
+   8. 自訂圖片上傳邏輯
    ============================================================ */
 if (imageUploadInput && cardImg) {
   imageUploadInput.addEventListener("change", (e) => {
@@ -213,7 +305,6 @@ if (imageUploadInput && cardImg) {
         cardImg.src = newImgUrl;
         currentUploadedImage = newImgUrl;
 
-        // 如果目前處於模糊背景模式，同步更新背景
         if (blurBgBtn && blurBgBtn.classList.contains("active")) {
           document.body.style.backgroundImage = `linear-gradient(rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.08)), url("${newImgUrl}")`;
         }
@@ -225,7 +316,7 @@ if (imageUploadInput && cardImg) {
 }
 
 /* ============================================================
-   8. 卡片尺寸動態縮放邏輯 (Card Scale Slider)
+   9. 卡片尺寸動態縮放邏輯 (Card Scale Slider)
    ============================================================ */
 if (cardScaleRange && scaleValDisplay && card) {
   const baseWidth = 300;

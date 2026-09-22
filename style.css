@@ -1,0 +1,336 @@
+/* ============================================================
+   1. 全域變數宣告 (CSS Custom Variables)
+   ============================================================ */
+:root {
+  --pointer-x: 50%;
+  --pointer-y: 50%;
+  --card-scale: 1;
+  --card-opacity: 1;
+  --rotate-x: -5deg;
+  --rotate-y: 5deg;
+  --background-x: var(--pointer-x);
+  --background-y: var(--pointer-y);
+  --pointer-from-center: 0;
+
+  /* 🌟 [自訂參數 1] 3D 厚度牆強度 (數字越大，上下左右側邊切面越厚實明顯) */
+  --card-thickness-depth: 2px;
+
+  /* 🌟 [自訂參數 2] 陰影濃淡度百分比 (可自由填寫 0 到 1.5，例如 0.8 為 80% 濃、1.2 為強烈陰影) */
+  --card-shadow-opacity: 0.8;
+
+  /* 🌟 [自訂參數 3] 側面厚度切面顏色 (深金屬黑) */
+  --card-edge-color: #565656;
+
+  /* 桌面貼地陰影微調參數 */
+  --card-shadow-blur: 10px;
+  --card-shadow-offset-y: 12px;
+  --card-shadow-depth: 0px;
+}
+
+/* ============================================================
+   2. 全域與排版設定 (Global & Layout Settings)
+   ============================================================ */
+body {
+  background-color: #111111;
+  background-size: cover !important;
+  background-position: center center !important;
+  background-repeat: no-repeat !important;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0;
+  transition: background 0.4s ease, background-color 0.3s ease;
+  overflow: hidden;
+  
+  backdrop-filter: blur(20px) brightness(1.1);
+  -webkit-backdrop-filter: blur(20px) brightness(1.1);
+}
+
+/* === 3D 視角外層容器 === */
+.card-wrapper {
+  perspective: 1000px;
+  perspective-origin: center center;
+}
+
+/* === 3D 卡片主容器 (純淨透明邊界) === */
+.card {
+  width: 300px;
+  height: auto;
+  max-width: 90vw;
+  border-radius: 16px;
+  transform-style: preserve-3d;
+  position: relative;
+  cursor: pointer;
+  background: transparent !important;
+  box-shadow: none !important;
+  filter: none !important;
+  transition: none !important;
+}
+
+.card:hover {
+  filter: none !important;
+  background: transparent !important;
+}
+
+/* ============================================================
+   3. 核心 3D 物理動態層 (零灰底 + 上下左右 3D 異型厚度牆)
+   ============================================================ */
+.card__rotator {
+  width: 100%;
+  height: 100%;
+  border-radius: 16px;
+  transform-style: preserve-3d;
+  transform-origin: center center;
+  transform: rotateX(var(--rotate-x, 0deg)) rotateY(var(--rotate-y, 0deg)) scale(var(--card-scale, 1));
+}
+
+.card__front {
+  width: 100%;
+  height: auto;
+  position: relative;
+  border-radius: inherit;
+  overflow: visible !important;
+  transform-style: preserve-3d;
+  background: transparent !important;
+  box-shadow: none !important;
+  
+  transform: translateZ(10px);
+}
+
+.card__front::before {
+  display: none !important;
+}
+
+/* 🌟 [核心技術] 反光直接作用在 PNG 圖像上 (徹底滅絕方形色塊) */
+.card__front img {
+  width: 100%;
+  height: auto;
+  display: block;
+  pointer-events: none;
+  object-fit: contain;
+  background: transparent !important;
+  
+  filter: 
+    brightness(calc(1 + var(--card-opacity, 0) * 0.25))
+    contrast(calc(1 + var(--card-opacity, 0) * 0.1))
+    drop-shadow(calc(-1 * var(--card-thickness-depth)) 0px 0px var(--card-edge-color))
+    drop-shadow(var(--card-thickness-depth) 0px 0px var(--card-edge-color))
+    drop-shadow(0px var(--card-thickness-depth) 0px #08080a)
+    drop-shadow(0px calc(-1 * var(--card-thickness-depth)) 0px #222226)
+    drop-shadow(0px calc(var(--card-shadow-offset-y) * 0.8) var(--card-shadow-blur) rgba(0, 0, 0, calc(0.9 * var(--card-shadow-opacity))));
+}
+
+/* ============================================================
+   4. 光影與動態增強陰影圖層 (徹底除滅所有矩形 DOM)
+   ============================================================ */
+.card__shine { display: none !important; }
+.card__glare { display: none !important; }
+.card__shadow { display: none !important; }
+
+/* ============================================================
+   5. 展示控制面板 UI (Control Panel UI - 桌機基礎樣式)
+   ============================================================ */
+.controls {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  background: rgba(30, 30, 32, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 8px 16px;
+  border-radius: 30px;
+  color: #ffffff;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  z-index: 1000;
+  box-sizing: border-box;
+}
+
+.gyro-group,
+.color-group,
+.scale-group,
+.upload-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.label-text {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.color-dots {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.color-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50% !important;
+  border: 2px solid transparent;
+  padding: 0;
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  flex-shrink: 0;
+}
+
+.color-dot:hover {
+  transform: scale(1.15);
+}
+
+.color-dot.active {
+  border-color: #ffffff;
+  transform: scale(1.1);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
+}
+
+.controls .color-dots button.color-dot--blur {
+  background-color: #8b5cf6 !important;
+  background: #8b5cf6 !important;
+  border: 2px solid transparent !important;
+  cursor: pointer;
+}
+
+.upload-group {
+  border-left: 1px solid rgba(255, 255, 255, 0.15);
+  padding-left: 16px;
+}
+
+.upload-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  user-select: none;
+  pointer-events: auto !important;
+}
+
+.gyro-btn {
+  background: rgba(139, 92, 246, 0.35) !important;
+  border: 1px solid rgba(139, 92, 246, 0.6) !important;
+}
+
+.scale-group {
+  border-left: 1px solid rgba(255, 255, 255, 0.15);
+  padding-left: 16px;
+}
+
+.scale-group #scaleVal {
+  display: inline-block;
+  min-width: 36px;
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.scale-group input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 80px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+
+.scale-group input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #ffffff;
+}
+
+/* ============================================================
+   📱 6. 手機端極致響應式版 (Flex 零誤差絕對居中 + 等比縮放)
+   ============================================================ */
+@media (max-width: 768px) {
+  .controls {
+    /* 🌟 1. 改用左右 0px + margin: 0 auto 自動水平居中，徹底告別 translate 偏移問題 */
+    position: fixed !important;
+    top: auto !important;
+    bottom: 24px !important;
+    left: 0 !important;
+    right: 0 !important;
+    margin: 0 auto !important;
+    
+    /* 2. 基準寬度與內襯 */
+    width: fit-content !important;
+    max-width: 92vw !important;
+    padding: 8px 14px !important;
+    gap: 8px !important;
+    border-radius: 35px !important;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5) !important;
+    white-space: nowrap !important;
+    box-sizing: border-box !important;
+    z-index: 10000 !important;
+
+    /* 🌟 3. 錨點改為正中心 center center，僅做 scale 縮放，絕不位移！ */
+    transform-origin: center center !important;
+    transform: scale(clamp(0.72, calc(100vw / 400), 1)) !important;
+  }
+
+  /* 隱藏佔空間的純文字標籤 */
+  .color-group .label-text,
+  .scale-group .label-text,
+  .scale-group #scaleVal {
+    display: none !important;
+  }
+
+  /* 精緻內襯與分隔線 */
+  .scale-group,
+  .upload-group {
+    padding-left: 8px !important;
+    border-left: 1px solid rgba(255, 255, 255, 0.15) !important;
+    gap: 6px !important;
+  }
+
+  .gyro-group,
+  .color-group {
+    gap: 6px !important;
+  }
+
+  /* 圓形色彩點點尺寸 */
+  .color-dots {
+    gap: 5px !important;
+  }
+  .color-dot {
+    width: 16px !important;
+    height: 16px !important;
+  }
+
+  /* 尺寸拉桿寬度 */
+  .scale-group input[type="range"] {
+    width: 42px !important;
+  }
+
+  /* 膠囊按鈕尺寸 */
+  .gyro-btn,
+  .upload-btn {
+    padding: 6px 12px !important;
+    font-size: 11px !important;
+    border-radius: 16px !important;
+    font-weight: 500 !important;
+  }
+}
